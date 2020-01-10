@@ -6,6 +6,7 @@ use DateTimeImmutable;
 use Yokai\Batch\BatchStatus;
 use Yokai\Batch\Failure;
 use Yokai\Batch\JobExecution;
+use Yokai\Batch\JobExecutionLogs;
 use Yokai\Batch\JobParameters;
 use Yokai\Batch\Summary;
 use Yokai\Batch\Warning;
@@ -68,6 +69,11 @@ final class JobExecutionRowNormalizer
     /**
      * @var string
      */
+    private $logsCol;
+
+    /**
+     * @var string
+     */
     private $dateFormat;
 
     public function __construct(
@@ -81,6 +87,7 @@ final class JobExecutionRowNormalizer
         string $failuresCol,
         string $warningsCol,
         string $childExecutionsCol,
+        string $logsCol,
         string $dateFormat
     ) {
         $this->idCol = $idCol;
@@ -93,6 +100,7 @@ final class JobExecutionRowNormalizer
         $this->failuresCol = $failuresCol;
         $this->warningsCol = $warningsCol;
         $this->childExecutionsCol = $childExecutionsCol;
+        $this->logsCol = $logsCol;
         $this->dateFormat = $dateFormat;
     }
 
@@ -109,6 +117,7 @@ final class JobExecutionRowNormalizer
             $this->failuresCol => array_map([$this, 'failureToArray'], $jobExecution->getFailures()),
             $this->warningsCol => array_map([$this, 'warningToArray'], $jobExecution->getWarnings()),
             $this->childExecutionsCol => array_map([$this, 'toRow'], $jobExecution->getChildExecutions()),
+            $this->logsCol => $jobExecution->getParentExecution() === null ? (string)$jobExecution->getLogs() : null,
         ];
     }
 
@@ -135,7 +144,8 @@ final class JobExecutionRowNormalizer
                 $name,
                 $status,
                 $parameters,
-                $summary
+                $summary,
+                new JobExecutionLogs($data[$this->logsCol])
             );
         }
 
